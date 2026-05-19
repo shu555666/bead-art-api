@@ -1,92 +1,65 @@
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "10mb",
-    },
-  },
-};
-
-const API_KEY = "V4BU21zEBvzwE5JB33H8nyd7";
-
 export default async function handler(req, res) {
 
-  if (req.method !== "POST") {
+  if (req.method !== 'POST') {
     return res.status(405).json({
-      error: "Only POST requests allowed",
-    });
+      success: false,
+      error: 'Method not allowed'
+    })
   }
 
   try {
 
-    const { image } = req.body;
+    const { image } = req.body
 
     if (!image) {
       return res.status(400).json({
-        error: "No image provided",
-      });
+        success: false,
+        error: '没有图片'
+      })
     }
 
-    // 去掉 base64 前缀
-    const base64Data = image.replace(
-      /^data:image\/\w+;base64,/,
-      ""
-    );
-
-    // 转 buffer
-    const buffer = Buffer.from(base64Data, "base64");
-
-    // 转 formData
-    const formData = new FormData();
-
-    formData.append(
-      "image_file",
-      new Blob([buffer]),
-      "image.png"
-    );
-
-    formData.append("size", "auto");
-
-    // 调用 remove.bg API
+    // 请求 remove.bg
     const response = await fetch(
-      "https://api.remove.bg/v1.0/removebg",
+      'https://api.remove.bg/v1.0/removebg',
       {
-        method: "POST",
-
+        method: 'POST',
         headers: {
-          "X-Api-Key": API_KEY,
+          'X-Api-Key': 'V4BU21zEBvzwE5JB33H8nyd7'
         },
-
-        body: formData,
+        body: JSON.stringify({
+          image_file_b64: image,
+          size: 'auto'
+        })
       }
-    );
+    )
 
+    // remove.bg 返回失败
     if (!response.ok) {
 
-      const text = await response.text();
+      const errorText = await response.text()
 
       return res.status(500).json({
-        error: "remove.bg API failed",
-        detail: text,
-      });
+        success: false,
+        error: errorText
+      })
     }
 
-    // 获取抠图后的图片
-    const arrayBuffer = await response.arrayBuffer();
+    // 获取图片 buffer
+    const arrayBuffer = await response.arrayBuffer()
 
-    const outputBuffer = Buffer.from(arrayBuffer);
+    const base64 = Buffer.from(arrayBuffer).toString('base64')
 
-    // 返回 PNG
-    res.setHeader("Content-Type", "image/png");
+    // 返回给微信小程序
+    return res.status(200).json({
+      success: true,
+      image: `data:image/png;base64,${base64}`
+    })
 
-    return res.status(200).send(outputBuffer);
-
-  } catch (error) {
-
-    console.error(error);
+  } catch (err) {
 
     return res.status(500).json({
-      error: "Background removal failed",
-      detail: error.message,
-    });
+      success: false,
+      error: err.message
+    })
   }
 }
