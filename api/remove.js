@@ -1,5 +1,3 @@
-import { removeBackground } from "@imgly/background-removal";
-
 export const config = {
   api: {
     bodyParser: {
@@ -8,13 +6,17 @@ export const config = {
   },
 };
 
+const API_KEY = "V4BU21zEBvzwE5JB33H8nyd7";
+
 export default async function handler(req, res) {
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: "Only POST requests allowed",
+    });
+  }
+
   try {
-    if (req.method !== "POST") {
-      return res.status(405).json({
-        error: "Only POST requests allowed",
-      });
-    }
 
     const { image } = req.body;
 
@@ -24,29 +26,65 @@ export default async function handler(req, res) {
       });
     }
 
-    // base64 转 buffer
+    // 去掉 base64 前缀
     const base64Data = image.replace(
       /^data:image\/\w+;base64,/,
       ""
     );
 
+    // 转 buffer
     const buffer = Buffer.from(base64Data, "base64");
 
-    // AI 抠图
-    const blob = await removeBackground(buffer);
+    // 转 formData
+    const formData = new FormData();
 
-    // 转 buffer
-    const arrayBuffer = await blob.arrayBuffer();
+    formData.append(
+      "image_file",
+      new Blob([buffer]),
+      "image.png"
+    );
+
+    formData.append("size", "auto");
+
+    // 调用 remove.bg API
+    const response = await fetch(
+      "https://api.remove.bg/v1.0/removebg",
+      {
+        method: "POST",
+
+        headers: {
+          "X-Api-Key": API_KEY,
+        },
+
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+
+      const text = await response.text();
+
+      return res.status(500).json({
+        error: "remove.bg API failed",
+        detail: text,
+      });
+    }
+
+    // 获取抠图后的图片
+    const arrayBuffer = await response.arrayBuffer();
+
     const outputBuffer = Buffer.from(arrayBuffer);
 
     // 返回 PNG
     res.setHeader("Content-Type", "image/png");
-    res.status(200).send(outputBuffer);
+
+    return res.status(200).send(outputBuffer);
 
   } catch (error) {
+
     console.error(error);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Background removal failed",
       detail: error.message,
     });
