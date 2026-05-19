@@ -23,13 +23,23 @@ export default async function handler(req, res) {
       'https://api.remove.bg/v1.0/removebg',
       {
         method: 'POST',
+
         headers: {
-          'X-Api-Key': 'V4BU21zEBvzwE5JB33H8nyd7'
+
+          'X-Api-Key': 'V4BU21zEBvzwE5JB33H8nyd7',
+
+          'Content-Type': 'application/json'
+
         },
+
         body: JSON.stringify({
+
           image_file_b64: image,
+
           size: 'auto'
+
         })
+
       }
     )
 
@@ -38,28 +48,47 @@ export default async function handler(req, res) {
 
       const errorText = await response.text()
 
+      console.error('remove.bg错误：', errorText)
+
       return res.status(500).json({
+
         success: false,
+
         error: errorText
+
       })
+
     }
 
-    // 获取图片 buffer
+    // 获取图片buffer
     const arrayBuffer = await response.arrayBuffer()
 
-    const base64 = Buffer.from(arrayBuffer).toString('base64')
+    // 转base64
+    const base64 = Buffer
+      .from(arrayBuffer)
+      .toString('base64')
 
-    // 返回给微信小程序
+    // 返回微信小程序
     return res.status(200).json({
+
       success: true,
+
       image: `data:image/png;base64,${base64}`
+
     })
 
   } catch (err) {
 
+    console.error(err)
+
     return res.status(500).json({
+
       success: false,
+
       error: err.message
+
     })
+
   }
+
 }
