@@ -1,4 +1,4 @@
-import { removeBackground } from "@imgly/background-removal-node";
+import { removeBackground } from "@imgly/background-removal";
 
 export const config = {
   api: {
