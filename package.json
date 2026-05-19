@@ -11,7 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
  "dependencies": {
-  "@imgly/background-removal-node": "^1.4.5"
+  "@imgly/background-removal": "^1.4.5"
 },
   "engines": {
     "node": "22.x"
