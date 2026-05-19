@@ -10,7 +10,10 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "dependencies": {
-    "@imgly/background-removal-node": "^1.4.5"
+ "dependencies": {
+  "@imgly/background-removal-node": "^1.4.5"
+},
+  "engines": {
+    "node": "18.x"
   }
 }
